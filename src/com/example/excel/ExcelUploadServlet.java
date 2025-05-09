@@ -1,5 +1,6 @@
 package com.example.excel;
 
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Controller;
@@ -25,14 +26,26 @@ public class ExcelUploadServlet {
     @RequestMapping(value = "/upload.do", method = RequestMethod.POST)
     public String uploadExcel(@RequestParam("excelFile")MultipartFile file , ModelMap model){
         List<Map<String, String>> customerList = new ArrayList<>();
-        if (!file.getOriginalFilename().endsWith(".xlsx")) {
+        if (!file.getOriginalFilename().endsWith(".xlsx") && !file.getOriginalFilename().endsWith(".xls")) {
             model.addAttribute("error", "엑셀(.xlsx) 파일만 업로드 가능합니다.");
             return "excel/excelResult";
         }
+
+
         try{
+            Workbook workbook;
             InputStream is = file.getInputStream();
-            Workbook workbook = new XSSFWorkbook(is);
-            Sheet sheet = workbook.getSheetAt(0);
+
+            if(file.getOriginalFilename().endsWith(".xlsx")){
+                workbook = new XSSFWorkbook(is);
+            }else if(file.getOriginalFilename().endsWith(".xls")){
+                workbook = new HSSFWorkbook(file.getInputStream()); // 구버전 엑셀
+            } else {
+                model.addAttribute("error", "지원하지 않는 엑셀 형식입니다.");
+                return "excel/excelResult";
+            }
+
+            Sheet sheet = workbook.getSheetAt(2);
 
             Row headerRow0 = sheet.getRow(0);
             if (headerRow0 == null ||
